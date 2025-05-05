@@ -1,0 +1,5 @@
+{
+  "database_path": "data/portfolio.db",
+  "finnhub_api_url": "https://finnhub.io/api/v1",
+  "log_level": "INFO"
+}

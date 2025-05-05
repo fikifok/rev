@@ -1,0 +1,24 @@
+project_root/
+├── config/
+│   ├── settings.json          # Genel ayarlar
+│   └── .env.example           # Gizli anahtar şablonu
+├── core/
+│   ├── config.py              # Ayarları yükleme
+│   ├── db.py                  # SQLite bağlantısı
+│   └── logger.py              # Logging konfigurasyonu
+├── modules/
+│   └── transactions/          # İlk modül klasörü
+│       ├── __init__.py
+│       └── transactions.py    # Boş CRUD şablonu
+├── tests/
+│   ├── fixtures/              # Data-mock (CSV/JSON) klasörü
+│   └── test_config.py         # Basit config testi
+├── .gitignore
+├── requirements.txt
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # CI yapılandırması (GitHub Actions)
+├── logs/                      # Uygulama log dosyaları
+├── data/                      # SQLite veritabanı dosyası
+├── README.md
+└── Dockerfile (opsiyonel)

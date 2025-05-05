@@ -1,0 +1,112 @@
+Güncellenmiş Program Özeti
+
+    Zaman Aralığı
+    Tüm işlem ve veri kayıtları Ocak 2022’ten itibaren saklanacak.
+
+    Veri Depolama
+    Gömülü SQLite (disk-tabanlı) veritabanı; her modül kendi tablolarını oluşturup yönetir.
+
+    Mimari
+
+        Plugin-Tabanlı: Her ana modül (transactions, BES, expenses, vb.) birer eklenti (“plugin”) olarak yüklenir, aktifleştirilir veya devre dışı bırakılır.
+
+        Merkezi çekirdek, yüklü eklentileri keşfedip başlatır.
+
+    Para Birimi ve Dönüşümler
+
+        Tüm değerler USD cinsinden saklanır.
+
+        unit_price ve total_amount alanları USD; TL cinsinden alış-satışlar için her işlemde o günün (veya ilgili ayın ortalamasının) kuru conversion_rate olarak da saklanır.
+
+        Geçmiş işlem verilerinin uygunluğu için aylık ortalama kur da tutulabilir (ayarlama eklentide).
+
+    Zaman Damgası
+    timestamp alanı YYYY-MM-DD HH:MM formatında saniye içermeden saklanır.
+
+    Genel Fonksiyonlar
+
+        Serbest Metin Etiketler: İşlemlere “Long-term”, “Swing”, “İlk alım” gibi not/etiket eklenebilir.
+
+        Kullanıcı-Odaklı Konfigürasyon:
+
+            settings.json + gizli değerler için .env.
+
+            Runtime’da konfig güncelleme (API anahtarları, eklenti ayarları) mümkün.
+
+    Logging & Hata Yönetimi
+
+        Python logging ile modül-bazlı log’lama (DEBUG → CRITICAL).
+
+        Konsol ve dönen dosya (rotating) ikilisi.
+
+        Uygulama seviyesinde “global exception handler” → kullanıcıya sade mesaj, log dosyasına ayrıntılı stack-trace.
+
+    Test Altyapısı
+
+        pytest + fixture’lar (disk-tabanlı geçici SQLite dosyaları).
+
+        API-mock ve CSV/JSON-mock ile birim testler.
+
+    Raporlama & GUI
+
+        İnteraktif program içi özet paneller (no Excel/PDF dışa aktarma temel hedef).
+
+        Web-tabanlı veya masaüstü (karar hâlen netleşecek), modül panoları plugin bazında gösterilecek.
+
+Güncellenmiş Aşama-Aşama Proje Planı
+Aşama	Başlık & İçerik
+0 – Altyapı & Ortam Hazırlığı
+0.1	config/ dizini: settings.json + .env (API anahtarları).
+0.2	SQLite bağlayıcı (tekil connection, plugin-ler arası paylaşım).
+0.3	Logging/Hata: uygulama açılışında konfig, modül log’lama, global handler.
+0.4	pytest kurulumu; tests/fixtures/ ve geçici DB fixture.
+1 – Transactions Modülü
+1.1	transactions eklentisi (plugin)
+1.2	Tablo şeması: id, timestamp (YYYY-MM-DD HH:MM), year_month, asset_type, symbol, quantity, unit_price (USD), total_amount, currency, conversion_rate, tags (text)
+1.3	CRUD + “free-text” etiketleme
+1.4	Unit test’ler + data-mock
+2 – BES Takip Sistemi
+2.1	bes_contracts tablosu:
+
+    • kurum adı, sözleşme başlangıç tarihi
+    • aylık katkı tutarı, toplam birikim
+    • seçilen fon ve devlet katkı fonu (%30, ayrı kaydedilen getirisi)
+    | 2.2 | Metodlar: aylık/yıllık getiriler; devlet katkısı, net getiri hesaplama
+    | 2.3 | Unit test + mock veri |
+    | 3 – Piyasa Veri Çekme |
+    | 3.1 | API adaptörü:
+    • get_price(symbol, date=None)
+    • get_history(symbol, start, end) opsiyonel
+    | 3.2 | Çağrı limiti aşıldığında uyarı; kullanıcının manuel fiyat girişi alternatifi
+    | 3.3 | Cache: geçici (program çalışması boyu) veya disk (TTL ayarlanabilir) |
+    | 4 – Harcama Takibi |
+    | 4.1 | expenses eklentisi
+    | 4.2 | Kategori hiyerarşisi: Gıda, Akaryakıt, Kira, Fatura, Lüks, Kurs, → alt-kategoriler
+    | 4.3 | Kullanıcı girdisi: maaş, kira, fatura ortalaması, diğer bütçeler
+    | 4.4 | Harcama vs. bütçe planlayıcısı; “almak istediklerim” listesi
+    | 5 – Simülasyon & Yönetici |
+    | 5.1 | Plugin: “Simülasyon”
+    | 5.2 | Deterministik model (sabit getiri) ya da Monte Carlo (opsiyonel)
+    | 5.3 | Kullanıcı tanımlı varlık dağılımı (JSON veya UI üzerinden)
+    | 5.4 | Grafik/veri hazırlama, test senaryoları |
+    | 6 – Temettü & Bölünme |
+    | 6.1 | dividends + splits tabloları
+    | 6.2 | Kullanıcı girişi: manuel veya (kolay şekilde) API’den çekme
+    | 6.3 | Bölünme sonrası lot yeniden hesaplama, fiyat API’den güncelleme |
+    | 7 – Kripto Stake Hesaplayıcı |
+    | 7.1 | stakes tablosu
+    | 7.2 | API’den stake oranı (varsa) veya manuel giriş
+    | 7.3 | Getiri hesaplama, test + mock |
+    | 8 – Emeklilik Planlayıcısı |
+    | 8.1 | “Retirement” modülü
+    | 8.2 | Girdi: hedef yaş, mevcut ana para, aylık masraf
+    | 8.3 | Algoritma: kalan ana para + getiriler → hangi yaşa kadar yeter?
+    | 8.4 | USD cinsinden; enflasyon/vergi yok |
+    | 9 – Özet & Raporlama |
+    | 9.1 | “Summary” servisi: tüm modüllerden veri toplama
+    | 9.2 | Program içi interaktif dashboard (tek sayfa/sekme) |
+    | 10 – GUI Entegrasyonu |
+    | 10.1 | Web-tabanlı (Flask/React) veya masaüstü (PyQt5) kararı
+    | 10.2 | Modül panoları “plugin” olarak yüklenip kapatılabilir
+    | 10.3 | Entegrasyon testleri (UI + modül bazlı) |
+
