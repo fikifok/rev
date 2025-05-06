@@ -1,23 +1,32 @@
 # tests/conftest.py
-import sys
-import os
 
-# Proje kök dizinini path’in en başına ekliyoruz
-root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if root not in sys.path:
-    sys.path.insert(0, root)
-
+import sqlite3
 import pytest
-from core.config import SETTINGS
+
+# tests/conftest.py
+import sys, os
+# proje kökünü path’e ekle
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 @pytest.fixture(autouse=True)
-def use_temp_sqlite(tmp_path, monkeypatch):
-    # 1) Disk-tabanlı geçici DB:
-    db_file = tmp_path / "test_transactions.db"
-    monkeypatch.setitem(SETTINGS, 'database_path', str(db_file))
-    #
-    # Eğer in-memory ile devam etmek isterseniz, bunun yerine:
-    # uri = "file:tests_transactions?mode=memory&cache=shared"
-    # monkeypatch.setitem(SETTINGS, 'database_path', uri)
-    # (ve get_connection() içinde uri=True ayarlı olmalı)
-    yield
+def in_memory_db(monkeypatch):
+    # 1) Her test için tek ortak in-memory bağlantısı oluştur
+    conn = sqlite3.connect(":memory:")
+
+    # 2) init_db() çağrıldığında modules/transactions/db.py’nin get_connection’ı in-memory’e dönsün
+    import modules.transactions.db as db_mod
+    monkeypatch.setattr(db_mod, "get_connection", lambda: conn)
+
+    # 3) repository içindeki get_connection de aynı conn’a dönsün
+    import modules.transactions.repository as repo_mod
+    monkeypatch.setattr(repo_mod, "get_connection", lambda: conn)
+
+    # 4) Şema (transactions + assets tabloları) in-memory DB’de oluşturulsun
+    from modules.transactions.db import init_db
+    init_db()
+
+    yield conn
+
+    # Testten sonra bağlantıyı kapat
+    conn.close()

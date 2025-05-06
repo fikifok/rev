@@ -1,29 +1,19 @@
+# core/db.py
 import sqlite3
 from core.config import SETTINGS
-
-_conn = None
+from pathlib import Path
 
 def get_connection():
-    """
-    Returns a single sqlite3.Connection for SETTINGS['database_path'].
-    If that Connection has been closed, it will re-open it.
-    """
-    global _conn
+    # 1) Bu dosyanın bulunduğu klasörden bir seviye yukarı çıkıp 'data/transactions.db' dosyasını gösterir
+    base_dir = Path(__file__).resolve().parent.parent
+    db_path = base_dir / "data" / "transactions.db"
 
-    # If we already had a connection but it's closed, reset it.
-    if _conn is not None:
-        try:
-            _conn.cursor()
-        except sqlite3.ProgrammingError:
-            _conn = None
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if _conn is None:
-        _conn = sqlite3.connect(
-            SETTINGS['database_path'],
-            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
-            check_same_thread=False,
-            uri=True  # allows file:... URIs if you ever switch
-        )
-        _conn.row_factory = sqlite3.Row
+    # 3) Dosya yolunu str() ile verip SQLite'a bağlan
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
+    # 4) Satırları hem sütun adı ile hem indeks ile erişilebilir hale getir
+    conn.row_factory = sqlite3.Row
+    return conn
 
-    return _conn
+_conn = None

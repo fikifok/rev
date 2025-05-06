@@ -22,3 +22,13 @@ project_root/
 ├── data/                      # SQLite veritabanı dosyası
 ├── README.md
 └── Dockerfile (opsiyonel)
+
+modules/
+└─ transactions/
+   ├─ __init__.py
+   ├─ db.py
+   ├─ models.py
+   ├─ repository.py
+   ├─ fx.py
+   ├─ service.py
+   └─ api.py
