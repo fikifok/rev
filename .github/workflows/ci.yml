@@ -37,11 +37,19 @@ jobs:
           pip install -r requirements.txt
           pip install flake8 safety
 
+
+
       - name: Lint with flake8
         run: flake8 .
 
       - name: Security check
         run: safety check --full-report
+
+      - name: Prepare .env
+        run: |
+          mkdir -p config
+          echo "FINNHUB_API_KEY=${{ secrets.FINNHUB_API_KEY }}" > config/.env
+
 
       - name: Run tests
         run: pytest --maxfail=1 --disable-warnings -q
